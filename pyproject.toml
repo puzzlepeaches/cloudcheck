@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "cloudcheck"
+version = "0.0.1"
+description = ""
+authors = ["Nicholas <nanastasi@sprocketsecurity.com>"]
+readme = "README.md"
+homepage = "https://github.com/puzzlepeaches/cloudcheck"
+repository = "https://github.com/puzzlepeaches/cloudcheck"
+exclude = ["tests"]
+include = ["LICENSE", "CHANGELOG.md"]
+license = "BSD 3-Clause License"
+classifiers = [
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
+
+packages = [
+    { include = "cloudcheck"}
+]
+
+[tool.poetry.scripts]
+cloudcheck = 'cloudcheck.__main__:main'
+
+[tool.poetry.dependencies]
+python = "^3.8"
+click = "*"
+click-config-file = "*"
+rich = "*"
+requests = "^2.27.1"
+bs4 = "^0.0.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+flake8 = "*"
+black = "*"
+pre-commit = "*"
+isort = "*"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

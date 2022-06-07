@@ -22,7 +22,7 @@ cloudcheck is a CLI utility to check if IP addresses in a file are associated wi
 cloudcheck supports all major operating systems and can be installed from PyPi using the following command:
 
 ```
-pipx install git+https://github.com/puzzlepeaches/cloudcheck.git 
+pipx install cloudcheck 
 ```
 <br>
 

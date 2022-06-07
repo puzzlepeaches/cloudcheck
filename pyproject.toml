@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloudcheck"
-version = "0.0.1"
+version = "0.1.0"
 description = ""
 authors = ["Nicholas <nanastasi@sprocketsecurity.com>"]
 readme = "README.md"

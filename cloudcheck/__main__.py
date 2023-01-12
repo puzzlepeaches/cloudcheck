@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
-import sys
-import click
+import json
 import logging
+import sys
 import threading
+from ipaddress import ip_address, ip_network
+
+import click
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.progress import track
 
 from .lib.akamai import Akamai
 from .lib.aws import Aws
@@ -11,17 +17,13 @@ from .lib.azure import Azure
 from .lib.cloudflare import Cloudflare
 from .lib.fastly import Fastly
 from .lib.google import Google
-from .lib.sucuri import Sucuri
 from .lib.incapsula import Incapsula
-
-from rich.console import Console
-from rich.logging import RichHandler
-from rich.progress import track
-from ipaddress import ip_address, ip_network
+from .lib.sucuri import Sucuri
 
 # Dealing with SSL Warnings
 try:
     import requests.packages.urllib3
+
     requests.packages.urllib3.disable_warnings()
 except Exception:
     pass
@@ -48,11 +50,21 @@ def process(p, v, target, output):
     try:
         for i in v:
             if ip_address(target) in ip_network(i):
-                log.info(f'Found {target} in {i} for provider {p.upper()}')
+                if not silence:
+                    log.info(f"Found {target} in {i} for provider {p.upper()}")
 
                 # Writing output to file
-                with open(output, "a") as f:
-                    f.write(f'{target},{p.upper()},{i}\n')
+                if output.endswith(".json"):
+                    with open(output, "a") as f:
+                        data = {
+                            "ip": target,
+                            "provider": p.upper(),
+                            "range": i,
+                        }
+                        f.write(json.dumps(data, indent=4) + "\n")
+                else:
+                    with open(output, "a") as f:
+                        f.write(f"{target},{p.upper()},{i}\n")
     except ValueError:
         pass
 
@@ -68,22 +80,34 @@ def spawn_process(res, targets, output):
 
 
 @click.command(no_args_is_help=True, context_settings=CONTEXT_SETTINGS)
-@click.argument("kind", type=click.Choice(["cloud"]), default="cloud")
+@click.option("-s", "--silent", is_flag=True, help="Silence output")
+@click.argument("kind", type=click.Choice(["cdn"]), default="cdn")
 @click.argument("provider", type=click.Choice(["all"]), default="all")
-@click.argument("targets", type=click.File("r"))
+@click.argument("targets", type=click.Path(file_okay=True, readable=True))
 @click.argument("output", type=click.Path(file_okay=True, writable=True))
-def main(kind, provider, targets, output):
+def main(silent, kind, provider, targets, output):
     """
     Tool to check if a list of IPs are associated with a cloud provider. \n
     Currently only supports the checking of all providers at once. \n
     Usage: cloudcheck [kind] [provider] [targets] [output]
     """
 
+    global silence
+    silence = silent
+
     target_file = [line.strip() for line in open(targets)]
 
     # Pre-defined providers
-    providers = ["aws", "azure", "google", "akamai",
-                 "cloudflare", "fastly", "sucuri"]
+    providers = [
+        "aws",
+        "azure",
+        "google",
+        "akamai",
+        "cloudflare",
+        "fastly",
+        "sucuri",
+        "incapsula",
+    ]
 
     # Pre-defined results
     res = {}

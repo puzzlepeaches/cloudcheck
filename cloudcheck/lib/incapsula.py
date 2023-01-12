@@ -8,15 +8,12 @@ class Incapsula:
         pass
 
     def _get_ranges(self):
-        data = {'resp_format': 'text', }
-        response = requests.get(
-            'https://my.imperva.com/api/integration/v1/ips', data=data, verify=False)
-        return response.text
+        data = {"resp_format": "json"}
+        response = requests.post(
+            "https://my.imperva.com/api/integration/v1/ips", data=data, verify=False
+        ).json()
+        response = response["ipRanges"]
+        return response
 
     def _process_ranges(self, ranges):
-        incapsula_ranges = []
-        for line in ranges.splitlines():
-            if '::' not in line:
-                incapsula_ranges.append(line)
-
-        return incapsula_ranges
+        return ranges

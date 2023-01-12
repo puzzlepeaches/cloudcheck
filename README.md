@@ -36,6 +36,7 @@ The utility supports the following cloud and CDN providers:
 * Fastly
 * Google
 * Succuri 
+* Incapsula
 
 On run, the tool first requests IP ranges from API endpoints hosted by each provider. These ranges are then stored in a dictionary for processing. With this, the ranges are then searched to determine if the input IP addresses are contained within the stored CIDRs. 
 
@@ -45,7 +46,7 @@ On run, the tool first requests IP ranges from API endpoints hosted by each prov
 To use cloudcheck, execute a command similar to what is shown below:
 
 ```
-cloudcheck could all /tmp/targets.txt /tmp/output.txt
+cloudcheck cdn all /tmp/targets.txt /tmp/output.json
 ```
 
 The tool will request IP ranges from from the supported providers and then search for your target IPs in the requested IP ranges.
@@ -56,14 +57,13 @@ The tool will request IP ranges from from the supported providers and then searc
 ## Coming Soon
 Some planned features coming in the next release:
 
-* Add Incapsula support
-* Support IPv6
-* Add Leaseweb support
 * Support checking all cloud IP ranges 
-* Support checking only CDN IP ranges
+* Support checking only CDN IP ranges (Done)
 * Support searching specific providers only
-* JSON output support
+* JSON output support (Done)
 * DNS support 
+* Caching for ranges 
+* Support silent mode (Done)
 
 <br>
 

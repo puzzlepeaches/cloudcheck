@@ -54,17 +54,14 @@ def process(p, v, target, output):
                     log.info(f"Found {target} in {i} for provider {p.upper()}")
 
                 # Writing output to file
-                if output.endswith(".json"):
-                    with open(output, "a") as f:
-                        data = {
-                            "ip": target,
-                            "provider": p.upper(),
-                            "range": i,
-                        }
-                        f.write(json.dumps(data, indent=4) + "\n")
-                else:
-                    with open(output, "a") as f:
-                        f.write(f"{target},{p.upper()},{i}\n")
+                with open(output, "a") as f:
+                    data = {
+                        "ip": target,
+                        "cdn": True,
+                        "provider": p.upper(),
+                        "range": i,
+                    }
+                    f.write(json.dumps(data, indent=4) + "\n")
     except ValueError:
         pass
 
@@ -81,11 +78,13 @@ def spawn_process(res, targets, output):
 
 @click.command(no_args_is_help=True, context_settings=CONTEXT_SETTINGS)
 @click.option("-s", "--silent", is_flag=True, help="Silence output")
+@click.option("-c", "--cache", is_flag=True, help="Use cached data.")
+@click.option("-u", "--update", is_flag=True, help="Update cache.", default=False)
 @click.argument("kind", type=click.Choice(["cdn"]), default="cdn")
 @click.argument("provider", type=click.Choice(["all"]), default="all")
 @click.argument("targets", type=click.Path(file_okay=True, readable=True))
 @click.argument("output", type=click.Path(file_okay=True, writable=True))
-def main(silent, kind, provider, targets, output):
+def main(silent, cache, update, kind, provider, targets, output):
     """
     Tool to check if a list of IPs are associated with a cloud provider. \n
     Currently only supports the checking of all providers at once. \n
@@ -95,7 +94,8 @@ def main(silent, kind, provider, targets, output):
     global silence
     silence = silent
 
-    target_file = [line.strip() for line in open(targets)]
+    if not update:
+        target_file = [line.strip() for line in open(targets)]
 
     # Pre-defined providers
     providers = [
@@ -113,26 +113,33 @@ def main(silent, kind, provider, targets, output):
     res = {}
 
     # Instantiating modules from providers
-    for p in providers:
-        try:
-            module = p.title()
-            mod_name = getattr(sys.modules[__name__], module)
-            module = mod_name()
-        except Exception as err:
-            log.error(f"Unable to run module: {err}")
-            exit(1)
+    if not cache or update == True:
+        for p in providers:
+            try:
+                module = p.title()
+                mod_name = getattr(sys.modules[__name__], module)
+                module = mod_name()
+            except Exception as err:
+                log.error(f"Unable to run module: {err}")
+                exit(1)
 
-        # Getting IP ranges from module and inserting into res
-        try:
-            ranges = module._get_ranges()
-            results = module._process_ranges(ranges)
-            res[p] = results
-        except Exception as err:
-            log.error(f"Unable to get and process ranges: {err}")
-            exit(1)
+            # Getting IP ranges from module and inserting into res
+            try:
+                ranges = module._get_ranges()
+                results = module._process_ranges(ranges)
+                res[p] = results
+                with open("cloudcheck/lib/cache/cache.json", "w") as f:
+                    json.dump(res, f)
+            except Exception as err:
+                log.error(f"Unable to get and process ranges: {err}")
+                exit(1)
+    else:
+        # Spawning threads for each module to check IPs
+        with open("cloudcheck/lib/cache/cache.json", "r") as f:
+            res = json.load(f)
 
-    # Spawning threads for each module to check IPs
-    spawn_process(res, target_file, output)
+    if not update:
+        spawn_process(res, target_file, output)
 
 
 if __name__ == "__main__":
